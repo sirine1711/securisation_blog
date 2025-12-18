@@ -11,4 +11,17 @@ services:
   mailer:
     image: sj26/mailcatcher
     ports: ["1025", "1080"]
-###< symfony/mailer ###
+  ###< symfony/mailer ###
+  
+  web:
+    build: .
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - .:/app
+      - ./docker/vhost.conf:/etc/apache2/sites-enabled/000-default.conf
+      - ./docker/ssl:/etc/ssl/vulnblog
+    depends_on:
+      - database
+      - mailer

@@ -1,5 +1,5 @@
 FROM ubuntu:22.04
-EXPOSE 80
+EXPOSE 80 443
 
 WORKDIR /app
 
@@ -8,7 +8,7 @@ RUN apt-get update -qq
 ARG DEBIAN_FRONTEND=noninteractive
 ENV TZ=Etc/UTC
 RUN apt-get install -y tzdata cron
-RUN apt-get install -y apache2 libapache2-mod-php php composer curl git unzip mysql-server mysql-client
+RUN apt-get install -y apache2 libapache2-mod-php php composer curl git unzip mysql-server mysql-client ssl-cert
 RUN apt-get install -y php-xml php-intl php-curl php-mbstring php-mysql php-sqlite3 php-zip php-gd php-imagick
 RUN apt-get clean && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
 
@@ -19,7 +19,7 @@ COPY docker/php.ini /usr/local/etc/php/conf.d/app.ini
 COPY docker/vhost.conf /etc/apache2/sites-available/000-default.conf
 COPY docker/apache.conf /etc/apache2/conf-available/z-app.conf
 
-RUN a2enmod rewrite remoteip && a2enconf z-app
+RUN a2enmod rewrite remoteip ssl headers && a2enconf z-app
 
 # Mysql
 RUN service mysql start && \
@@ -50,6 +50,10 @@ RUN chown www-data:www-data /app/bin/console
 RUN echo "*  *    * * *   root    cd /app && bash bin/script" > /etc/cron.d/app
 RUN chmod 0644 /etc/cron.d/app
 RUN crontab /etc/cron.d/app
+
+# SSL Configuration
+COPY docker/enable-ssl.sh /enable-ssl.sh
+RUN chmod +x /enable-ssl.sh
 
 # Set entrypoint
 COPY docker/entrypoint.sh /entrypoint.sh
